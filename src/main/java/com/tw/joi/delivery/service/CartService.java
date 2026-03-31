@@ -7,6 +7,7 @@ import com.tw.joi.delivery.dto.request.AddProductRequest;
 import com.tw.joi.delivery.dto.response.CartProductInfo;
 import com.tw.joi.delivery.seedData.SeedData;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,15 +15,17 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CartService {
 
-    private final Map<String,Cart> userCarts= SeedData.cartForUsers;
+    private final Map<String, Cart> userCarts = SeedData.cartForUsers;
     private final UserService userService;
     private final ProductService productService;
 
     public CartProductInfo addProductToCartForUser(AddProductRequest addProductRequest) {
-        User user=userService.fetchUserById(addProductRequest.getUserId());
+        User user = userService.fetchUserById(addProductRequest.getUserId());
         Cart cart = fetchCartForUser(user);
         GroceryProduct product = productService.getProduct(addProductRequest.getProductId(),
-                                                           addProductRequest.getOutletId());
+                                                           addProductRequest.getOutletId())
+            .orElseThrow(() -> new NoSuchElementException(
+                "Product not found: " + addProductRequest.getProductId() + " at outlet: " + addProductRequest.getOutletId()));
         cart.getProducts().add(product);
         return new CartProductInfo(cart, product, product.getSellingPrice());
     }
@@ -30,6 +33,13 @@ public class CartService {
     public Cart getCartForUser(String userId) {
         User user=userService.fetchUserById(userId);
         return fetchCartForUser(user);
+    }
+
+    public Cart removeProductFromCart(String userId, String productId) {
+        User user = userService.fetchUserById(userId);
+        Cart cart = fetchCartForUser(user);
+        cart.getProducts().removeIf(product -> product.getProductId().equals(productId));
+        return cart;
     }
 
     private Cart fetchCartForUser(User user) {

@@ -8,7 +8,15 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    private final List<User> users= SeedData.users;
+    private final List<User> users;
+
+    public UserService() {
+        this.users = SeedData.users;
+    }
+
+    public UserService(List<User> users) {
+        this.users = users;
+    }
 
     public User fetchUserById(String userId) {
         return users.stream()
@@ -16,5 +24,4 @@ public class UserService {
             .findFirst()
             .orElse(null);
     }
-
 }
